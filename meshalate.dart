@@ -5,9 +5,6 @@ import 'dart:math' as Math;
 import 'package:vector_math/vector_math.dart';
 import 'package:three/three.dart' as THREE;
 import 'package:three/extras/controls/trackball_controls.dart';
-import 'package:three/extras/tween.dart' as TWEEN;
-
-part 'periodic_table.dart';
 
 var camera, scene, renderer;
 var geometry, material, mesh;
@@ -22,197 +19,104 @@ init() {
 
   camera = new THREE.PerspectiveCamera( 75.0, window.innerWidth / window.innerHeight, 1.0, 5000.0 );
   camera.position.z = 1800.0;
-
+  
   scene = new THREE.Scene();
+  
+  var loader = new THREE.STLLoader();
+  loader.load( './resources/stl/4-5.40-0.stl').then((geometry) {
+    var material = new THREE.MeshPhongMaterial( ambient: 0xff5533, color: 0xff5533, specular: 0x111111, shininess: 200 );
+    var mesh = new THREE.Mesh( geometry, material );
 
-  for ( int i = 0; i < table.length; i ++ ) {
+  //  mesh.position.setValues( 0.0, - 0.37, - 0.6 );
+  //  mesh.rotation.setValues( - Math.PI / 2, 0.0, 0.0 );
+  // mesh.scale.setValues( 2.0, 2.0, 2.0 );
+    
+  //  mesh.castShadow = true;
+ // mesh.receiveShadow = true;
 
-    var item = table[ i ];
+    scene.add(mesh);
+  });
+  
+  // Lights
+  scene.add( new THREE.AmbientLight( 0x777777 ) );
 
-    var number = new Element.tag( 'div' )
-    ..text = (i + 1).toString()
-    ..classes.add('number');
+  addShadowedLight( 1.0, 1.0, 1.0, 0xffffff, 1.35 );
+  addShadowedLight( 0.5, 1.0, -1.0, 0xffaa00, 1.0 );
+  
+  // renderer
+  renderer = new THREE.WebGLRenderer( antialias: true, alpha: false );
+  renderer.setSize( window.innerWidth, window.innerHeight );
 
-    var symbol = new Element.tag( 'div' )
-    ..text = item[ 0 ]
-    ..classes.add('symbol');
+  renderer.setClearColor( new THREE.Color(0x111111), 1 );
 
-    var details = new Element.tag( 'div' )
-    ..classes.add('details')
-    ..innerHtml = '${item[ 1 ]}<br>${item[ 2 ]}';
+  renderer.gammaInput = true;
+  renderer.gammaOutput = true;
+  renderer.physicallyBasedShading = true;
 
-    var element = new Element.tag( 'div' )
-    ..classes.add('element')
-    ..style.backgroundColor = 'rgba(0,127,127,${( new Math.Random().nextDouble() * 0.5 + 0.25 ) })'
-    ..children.add( number )
-    ..children.add( symbol )
-    ..children.add( details );
+  renderer.shadowMapEnabled = true;
+  //renderer.shadowMapCullFace = CullFaceBack;
 
-    var object = new THREE.CSS3DObject( element )
-    ..position.x = new Math.Random().nextDouble() * 4000 - 2000.0
-    ..position.y = new Math.Random().nextDouble() * 4000 - 2000.0
-    ..position.z = new Math.Random().nextDouble() * 4000 - 2000.0;
-
-    scene.add( object );
-
-    objects.add( object );
-
-  }
-
-  // table
-
-  for ( int i = 0; i < objects.length; i ++ ) {
-
-    var item = table[ i ];
-    var object = objects[ i ];
-
-    targets["table"].add( new THREE.Object3D()
-    ..position.x = ( item[ 3 ] * 160.0 ) - 1540.0
-    ..position.y = - ( item[ 4 ] * 200.0 ) + 1100.0
-    );
-
-  }
-
-  // sphere
-
-  var vector = new Vector3.zero();
-
-  for ( int i = 0, l = objects.length; i < l; i ++ ) {
-
-    var object = objects[ i ];
-
-    var phi = Math.acos( -1 + ( 2 * i ) / l );
-    var theta = Math.sqrt( l * Math.PI ) * phi;
-
-    object = new THREE.Object3D()
-    ..position.x = 1000.0 * Math.cos( theta ) * Math.sin( phi )
-    ..position.y = 1000.0 * Math.sin( theta ) * Math.sin( phi )
-    ..position.z = 1000.0 * Math.cos( phi );
-
-    vector = object.position.clone().scale( 2.0 );
-
-    object.lookAt( vector );
-
-    targets["sphere"].add( object );
-
-  }
-
-  // helix
-
-  vector = new Vector3.zero();
-
-  for ( int i = 0, l = objects.length; i < l; i ++ ) {
-
-    var object = objects[ i ];
-
-    var phi = i * 0.175 + Math.PI;
-
-    object = new THREE.Object3D()
-    ..position.x = 1100.0 * Math.sin( phi )
-    ..position.y = -(i * 8.0) + 450.0
-    ..position.z = 1100.0 * Math.cos( phi );
-
-    vector.setFrom(object.position);
-    vector.x *= 2;
-    vector.z *= 2;
-
-    object.lookAt( vector );
-
-    targets["helix"].add( object );
-
-  }
-
-  // grid
-
-  for ( int i = 0; i < objects.length; i ++ ) {
-
-    var object = objects[ i ];
-
-    object = new THREE.Object3D()
-    ..position.x = ( ( i % 5 ) * 400.0 ) - 800.0
-    ..position.y = ( - ( ( i ~/ 5 ) % 5 ) * 400.0 ) + 800.0
-    ..position.z = ( ( i ~/ 25 ) ) * 1000.0 - 2000.0;
-
-    targets["grid"].add( object );
-
-  }
-
-  //
-
-  renderer = new THREE.CSS3DRenderer()
-  ..setSize( window.innerWidth, window.innerHeight )
-  ..domElement.style.position = 'absolute'
-  ..domElement.style.top = "0";
   document.querySelector( '#container' ).children.add( renderer.domElement );
 
-  //
-
+  // controls
   controls = new TrackballControls( camera, renderer.domElement )
   ..rotateSpeed = 0.5
   ..addEventListener( 'change', (_) => render() );
 
-  document.querySelector( '#table' ).onClick.listen((e) => transform( e.target, targets["table"], 2000 ));
-
-  document.querySelector( '#sphere' ).onClick.listen((e) => transform( e.target, targets["sphere"], 2000 ));
-
-  document.querySelector( '#helix' ).onClick.listen((e) => transform( e.target, targets["helix"], 2000 ));
-
-  document.querySelector( '#grid' ).onClick.listen((e) => transform( e.target, targets["grid"], 2000 ));
-
-  transform( window, targets["table"], 5000 );
-
-  //
+ // document.querySelector( '#table' ).onClick.listen((e) => transform( e.target, targets["table"], 2000 ));
+  //document.querySelector( '#sphere' ).onClick.listen((e) => transform( e.target, targets["sphere"], 2000 ));
+ // document.querySelector( '#helix' ).onClick.listen((e) => transform( e.target, targets["helix"], 2000 ));
+ // document.querySelector( '#grid' ).onClick.listen((e) => transform( e.target, targets["grid"], 2000 ));
+  
+//  renderer.render( scene, camera );
 
   window.onResize.listen(onWindowResize);
+}
+
+addShadowedLight( x, y, z, color, intensity ) {
+
+  var directionalLight = new THREE.DirectionalLight( color, intensity );
+  directionalLight.position.setValues( x, y, z );
+  scene.add( directionalLight );
+
+  directionalLight.castShadow = true;
+  // directionalLight.shadowCameraVisible = true;
+
+  var d = 1.0;
+  directionalLight.shadowCameraLeft = -d;
+  directionalLight.shadowCameraRight = d;
+  directionalLight.shadowCameraTop = d;
+  directionalLight.shadowCameraBottom = -d;
+
+  directionalLight.shadowCameraNear = 1.0;
+  directionalLight.shadowCameraFar = 4.0;
+
+  directionalLight.shadowMapWidth = 1024;
+  directionalLight.shadowMapHeight = 1024;
+
+  directionalLight.shadowBias = -0.005;
+  directionalLight.shadowDarkness = 0.15;
 
 }
 
-transform( target, targets, duration ) {
-
-  TWEEN.removeAll();
-
-  for ( var i = 0; i < objects.length; i ++ ) {
-
-    var object = objects[ i ];
-    var target = targets[ i ];
-
-    new TWEEN.Tween( object.position )
-    ..to( { "x": target.position.x, "y": target.position.y, "z": target.position.z }, new Math.Random().nextDouble() * duration + duration )
-    ..easing = TWEEN.Easing.Exponential.InOut
-    ..start();
-
-    new TWEEN.Tween( object.rotation )
-    ..to( { "x": target.rotation.x, "y": target.rotation.y, "z": target.rotation.z }, new Math.Random().nextDouble() * duration + duration )
-    ..easing = TWEEN.Easing.Exponential.InOut
-    ..start();
-
-  }
-
-  new TWEEN.Tween( target )
-  ..to( {}, duration * 2 )
-  ..onUpdate = (object, value) { render(); }
-  ..start();
-}
 
 onWindowResize(_) {
-
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 
   renderer.setSize( window.innerWidth, window.innerHeight );
-
 }
 
 animate(num time) {
-
   window.requestAnimationFrame( animate );
 
-  TWEEN.update();
+  render();
   controls.update();
-
 }
 
-render() => renderer.render( scene, camera );
+render() {
+  renderer.render( scene, camera );
+}
 
 main() {
   init();
