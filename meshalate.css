@@ -13,22 +13,12 @@
     color: #ffffff;
   }
 
-  #info {
-    position: absolute;
-    width: 100%;
-    color: #ffffff;
-    padding: 5px;
-    font-family: Monospace;
-    font-size: 13px;
-    font-weight: bold;
-    text-align: center;
-  }
-
   #menu {
     position: absolute;
-    bottom: 20px;
-    width: 100%;
-    text-align: center;
+    top: 20px;
+    right: 20px;
+    width: 400px;
+    text-align: left;
   }
 
   .element {
