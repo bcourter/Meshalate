@@ -1,67 +1,18 @@
-library periodic_table;
+library meshalate;
 
 import 'dart:html';
 import 'dart:math' as Math;
-import 'package:vector_math/vector_math.dart';
-import 'package:three/three.dart' as THREE;
+import 'package:vector_math/vector_math.dart' hide Ray;
+import 'package:three/three.dart';
 import 'package:three/extras/controls/trackball_controls.dart';
 
-var camera, scene, renderer;
-var geometry, material, mesh;
+var camera, cameraTarget, scene, renderer;
+var geometry, material, mesh, loader;
 
 var controls;
 
-var objects = [];
+var container, stats;
 
-init() {
-
-  var targets = { "table": [], "sphere": [], "helix": [], "grid": [] };
-
-  camera = new THREE.PerspectiveCamera( 75.0, window.innerWidth / window.innerHeight, 1.0, 5000.0 );
-  camera.position.z = 1800.0;
-  
-  scene = new THREE.Scene();
-  
-  var loader = new THREE.STLLoader();
-  loader.load( './resources/stl/4-5.40-0.stl').then((geometry) {
-    var material = new THREE.MeshPhongMaterial( ambient: 0xff5533, color: 0xff5533, specular: 0x111111, shininess: 200 );
-    var mesh = new THREE.Mesh( geometry, material );
-
-  //  mesh.position.setValues( 0.0, - 0.37, - 0.6 );
-  //  mesh.rotation.setValues( - Math.PI / 2, 0.0, 0.0 );
-  // mesh.scale.setValues( 2.0, 2.0, 2.0 );
-    
-  //  mesh.castShadow = true;
- // mesh.receiveShadow = true;
-
-    scene.add(mesh);
-  });
-  
-  // Lights
-  scene.add( new THREE.AmbientLight( 0x777777 ) );
-
-  addShadowedLight( 1.0, 1.0, 1.0, 0xffffff, 1.35 );
-  addShadowedLight( 0.5, 1.0, -1.0, 0xffaa00, 1.0 );
-  
-  // renderer
-  renderer = new THREE.WebGLRenderer( antialias: true, alpha: false );
-  renderer.setSize( window.innerWidth, window.innerHeight );
-
-  renderer.setClearColor( new THREE.Color(0x111111), 1 );
-
-  renderer.gammaInput = true;
-  renderer.gammaOutput = true;
-  renderer.physicallyBasedShading = true;
-
-  renderer.shadowMapEnabled = true;
-  //renderer.shadowMapCullFace = CullFaceBack;
-
-  document.querySelector( '#container' ).children.add( renderer.domElement );
-
-  // controls
-  controls = new TrackballControls( camera, renderer.domElement )
-  ..rotateSpeed = 0.5
-  ..addEventListener( 'change', (_) => render() );
 
  // document.querySelector( '#table' ).onClick.listen((e) => transform( e.target, targets["table"], 2000 ));
   //document.querySelector( '#sphere' ).onClick.listen((e) => transform( e.target, targets["sphere"], 2000 ));
@@ -70,55 +21,114 @@ init() {
   
 //  renderer.render( scene, camera );
 
-  window.onResize.listen(onWindowResize);
-}
+  main() {
+    init();
+    animate(0);
+  }
 
-addShadowedLight( x, y, z, color, intensity ) {
+  init() {
+    container = document.createElement( 'div' );
+    document.body.append( container );
 
-  var directionalLight = new THREE.DirectionalLight( color, intensity );
-  directionalLight.position.setValues( x, y, z );
-  scene.add( directionalLight );
+    camera = new PerspectiveCamera( 35.0, window.innerWidth / window.innerHeight, 1.0, 15.0 );
+    camera.position.setValues( 3.0, 0.15, 3.0 );
 
-  directionalLight.castShadow = true;
-  // directionalLight.shadowCameraVisible = true;
+    cameraTarget = new Vector3( 0.0, -0.25, 0.0 );
 
-  var d = 1.0;
-  directionalLight.shadowCameraLeft = -d;
-  directionalLight.shadowCameraRight = d;
-  directionalLight.shadowCameraTop = d;
-  directionalLight.shadowCameraBottom = -d;
+    scene = new Scene();
+    scene.fog = new FogLinear( 0x000000, 2.0, 15.0 );
 
-  directionalLight.shadowCameraNear = 1.0;
-  directionalLight.shadowCameraFar = 4.0;
+    // STL
+    var material = new MeshPhongMaterial( 
+        ambient: 0x555555, 
+        color: 0xAAAAAA, 
+        specular: 0x111111, 
+        shininess: 16, 
+        side: DoubleSide,
+        shading: FlatShading
+    );
 
-  directionalLight.shadowMapWidth = 1024;
-  directionalLight.shadowMapHeight = 1024;
+    loader = new STLLoader();
 
-  directionalLight.shadowBias = -0.005;
-  directionalLight.shadowDarkness = 0.15;
+    loader.load( './resources/stl/4-5.40-0.stl').then((geometry) {
+      var mesh = new Mesh( geometry, material );
 
-}
+//      mesh.position.setValues( 0.0, - 0.37, - 0.6 );
+//      mesh.rotation.setValues( - Math.PI / 2, 0.0, 0.0 );
+//      mesh.scale.setValues( 2.0, 2.0, 2.0 );
 
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
 
-onWindowResize(_) {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
+      scene.add( mesh );
+    });
 
-  renderer.setSize( window.innerWidth, window.innerHeight );
-}
+    // Lights
+    scene.add( new AmbientLight( 0x777777 ) );
 
-animate(num time) {
-  window.requestAnimationFrame( animate );
+    addShadowedLight( 1.0, 1.0, 1.0, 0xaaaaaa, 1.0 );
+    addShadowedLight( 1.0, 1.0, -1.0, 0xaaaaaa, 1.0 );
 
-  render();
-  controls.update();
-}
+    // renderer
+    renderer = new WebGLRenderer( antialias: true, alpha: false );
+    renderer.setSize( window.innerWidth, window.innerHeight );
 
-render() {
-  renderer.render( scene, camera );
-}
+    renderer.setClearColor( scene.fog.color, 1 );
 
-main() {
-  init();
-  animate(0);
-}
+    renderer.gammaInput = true;
+    renderer.gammaOutput = true;
+    renderer.physicallyBasedShading = true;
+
+    renderer.shadowMapEnabled = true;
+    //renderer.shadowMapCullFace = CullFaceBack;
+
+    container.append( renderer.domElement );
+
+    // controls
+    controls = new TrackballControls( camera, renderer.domElement )
+    ..rotateSpeed = 0.5
+    ..addEventListener( 'change', (_) => render() );
+
+    window.onResize.listen(onWindowResize);
+  }
+
+  addShadowedLight( x, y, z, color, intensity ) {
+    var directionalLight = new DirectionalLight( color, intensity );
+    directionalLight.position.setValues( x, y, z );
+    scene.add( directionalLight );
+
+    directionalLight.castShadow = true;
+    // directionalLight.shadowCameraVisible = true;
+
+    var d = 1.0;
+    directionalLight.shadowCameraLeft = -d;
+    directionalLight.shadowCameraRight = d;
+    directionalLight.shadowCameraTop = d;
+    directionalLight.shadowCameraBottom = -d;
+
+    directionalLight.shadowCameraNear = 1.0;
+    directionalLight.shadowCameraFar = 4.0;
+
+    directionalLight.shadowMapWidth = 1024;
+    directionalLight.shadowMapHeight = 1024;
+
+    directionalLight.shadowBias = -0.005;
+    directionalLight.shadowDarkness = 0.15;
+  }
+
+  onWindowResize(_) {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
+  }
+
+  animate(num time) {
+    window.requestAnimationFrame( animate );
+    controls.update();
+    render();
+  }
+
+  render() {
+    renderer.render( scene, camera );
+  }
