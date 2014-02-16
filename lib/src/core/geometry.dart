@@ -431,10 +431,33 @@ class Geometry {
     return diff;
   }
 
-  clone() {
+  Geometry clone() {
+    var geometry = new Geometry();
+    var vertices = this.vertices;
+    
+    int il = vertices.length;
+    for ( int i = 0; i < il; i ++ ) {
+      geometry.vertices.add( vertices[ i ].clone() );
+    }
 
-    // TODO
+    var faces = this.faces;
+    il = faces.length;
+    for ( var i = 0; i < il; i ++ ) {
+      geometry.faces.add( faces[ i ].clone() );
+    }
 
+    var uvs = this.faceVertexUvs[0];
+    il = uvs.length;
+    for ( int i = 0; i < il; i ++ ) {
+      var uv = uvs[ i ], uvCopy = [];
+      int jl = uv.length;
+      for ( int j = 0; j < jl; j ++ ) {
+        uvCopy.add( new Vector2( uv[j].x, uv[j].y ) );
+      }
+      geometry.faceVertexUvs[0].add( uvCopy );
+    }
+    
+    return geometry;
   }
 
   // Quick hack to allow setting new properties (used by the renderer)

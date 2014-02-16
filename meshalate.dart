@@ -8,6 +8,9 @@ import 'package:three/three.dart';
 import 'package:three/extras/controls/trackball_controls.dart';
 import 'package:three/extras/scene_utils.dart';
 
+import 'lib/complex/complex.dart';
+import 'lib/complex/disc.dart' show Region, Disc;
+
 var camera, cameraTarget, scene, renderer;
 var material, mesh, loader;
 var controls;
@@ -43,18 +46,19 @@ init() {
   );
   
   List<int> indices = [0, 1, 2];
-  List<Geometry> objGeometry = [];
   List<Future> futures = indices.map((i) {
     return new STLLoader()
       .load('./resources/stl/4-5.40-$i.stl')
-      .then((geometry) {
-        objGeometry.add(centerGeometry(geometry));
+      .then((geom) {
+        geometry.add(centerGeometry(geom));
       })
     ;
   }).toList();
   
   Future.wait(futures).then((List values) {
-    addMeshToScene(objGeometry[0]);
+    Vector3 fn(v) => v;
+    Disc disc = new Disc(new Region(4, 5), 0.991, 666, geometry, fn);
+    addMeshToScene(disc.discGeom);
   });
   
   // Lights
@@ -173,10 +177,10 @@ String createObjString(object3d) {
     }
     
     for (int i = 0; i < geometry.faces.length; i++) {
-      s.write('f ${geometry.faces[i].a + offset} ${geometry.faces[i].b + offset} ${geometry.faces[i].c + offset}');
-          
-      if (geometry.faces[i] is Face4) {
-          s.write(' ${geometry.faces[i].d + offset}');
+      s.write('f ');
+      var face = geometry.faces[i];
+      for (int j = 0; j < face.indices.length; j++) {
+        s.write('${face.indices[j] + offset} ');
       }
       s.write('<br>');
     }
