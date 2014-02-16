@@ -5,6 +5,7 @@ import 'dart:math' as Math;
 import 'package:vector_math/vector_math.dart' hide Ray;
 import 'package:three/three.dart';
 import 'package:three/extras/controls/trackball_controls.dart';
+import 'package:three/extras/scene_utils.dart';
 
 var camera, cameraTarget, scene, renderer;
 var geometry, material, mesh, loader;
@@ -88,7 +89,6 @@ void addMeshToScene(Geometry geometry) {
 Geometry centerGeometry(geometry) {
     geometry.computeBoundingBox();
     var box = geometry.boundingBox;
-    var scale = 1;
     var vertices = geometry.vertices;
     for (int i = 0; i < vertices.length; i++) {  
         geometry.vertices[i] -= box.min;
@@ -138,5 +138,43 @@ render() {
   renderer.render( scene, camera );
 }
 
-saveObj() {
+void saveObj() {
+  var op = createObjString(scene);
+  var newWindow = window.open("", "obj");
+  newWindow.document.body.innerHtml = op;
+}
+
+String createObjString(object3d) {
+  var s = new StringBuffer();
+  var offset = 1;
+
+  traverseHierarchy(object3d, (child) {
+    if (child is! Mesh) {
+      return;
+    }
+    
+    Mesh mesh = child;
+    mesh.updateMatrixWorld();
+    Geometry geometry = mesh.geometry;
+    
+    for (int i = 0; i < geometry.vertices.length; i++) {
+      Vector3 vector = new Vector3(geometry.vertices[i].x, geometry.vertices[i].y, geometry.vertices[i].z);
+      vector = mesh.matrixWorld * vector;
+    
+      s.write('v ${vector.x} ${vector.y} ${vector.z}<br>');
+    }
+    
+    for (int i = 0; i < geometry.faces.length; i++) {
+      s.write('f ${geometry.faces[i].a + offset} ${geometry.faces[i].b + offset} ${geometry.faces[i].c + offset}');
+          
+      if (geometry.faces[i] is Face4) {
+          s.write(' ${geometry.faces[i].d + offset}');
+      }
+      s.write('<br>');
+    }
+
+    offset += geometry.vertices.length;
+  });
+
+  return s.toString();
 }
