@@ -1,6 +1,7 @@
 library meshalate;
 
 import 'dart:html';
+import 'dart:async';
 import 'dart:math' as Math;
 import 'package:vector_math/vector_math.dart' hide Ray;
 import 'package:three/three.dart';
@@ -8,9 +9,11 @@ import 'package:three/extras/controls/trackball_controls.dart';
 import 'package:three/extras/scene_utils.dart';
 
 var camera, cameraTarget, scene, renderer;
-var geometry, material, mesh, loader;
+var material, mesh, loader;
 var controls;
 var container, stats;
+
+List<Geometry> geometry = [];
 
 main() {
   init();
@@ -39,14 +42,19 @@ init() {
       shading: FlatShading
   );
   
-  var indices = [0, 1, 2];
-  var objModel = [];
-  indices.forEach((i) {
-    loader = new STLLoader()
-    ..load('./resources/stl/4-5.40-$i.stl').then((geometry) {
-      objModel.add(centerGeometry(geometry));
-      addMeshToScene(geometry);
-    });
+  List<int> indices = [0, 1, 2];
+  List<Geometry> objGeometry = [];
+  List<Future> futures = indices.map((i) {
+    return new STLLoader()
+      .load('./resources/stl/4-5.40-$i.stl')
+      .then((geometry) {
+        objGeometry.add(centerGeometry(geometry));
+      })
+    ;
+  }).toList();
+  
+  Future.wait(futures).then((List values) {
+    addMeshToScene(objGeometry[0]);
   });
   
   // Lights
