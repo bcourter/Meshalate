@@ -9,7 +9,7 @@ import 'package:three/extras/controls/trackball_controls.dart';
 import 'package:three/extras/scene_utils.dart';
 
 import 'lib/complex/complex.dart';
-import 'lib/complex/disc.dart' show Region, Disc;
+import 'lib/complex/disc.dart' ;
 
 var camera, cameraTarget, scene, renderer;
 var material, mesh, loader;
@@ -58,6 +58,16 @@ init() {
   Future.wait(futures).then((List values) {
     Vector3 fn(v) => v;
     Disc disc = new Disc(new Region(4, 5), 0.991, 666, geometry, fn);
+    
+    //addMeshToScene(new CircleGeometry(1.0)); 
+    disc.initialFace.edges.forEach((e) {
+      Circle circle = e.circLine as Circle;
+      Geometry c = new CircleGeometry(circle.radius, 24);
+      Mesh m = new Mesh(c);
+      m.translate(circle.center.modulus, circle.center.asVector3);
+ //     scene.add(m);      
+    });
+    
     addMeshToScene(disc.discGeom);
   });
   
