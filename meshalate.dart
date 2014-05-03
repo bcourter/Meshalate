@@ -57,7 +57,7 @@ init() {
   
   Future.wait(futures).then((List values) {
     Vector3 fn(v) => v;
-    Disc disc = new Disc(new Region(4, 5), 0.991, 666, geometry, fn);
+    Disc disc = new Disc(new Region(4, 5), 0.04, 666, geometry, fn);
     
     //addMeshToScene(new CircleGeometry(1.0)); 
     disc.initialFace.edges.forEach((e) {
