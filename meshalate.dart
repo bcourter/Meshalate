@@ -7,6 +7,7 @@ import 'package:vector_math/vector_math.dart' hide Ray;
 import 'package:three/three.dart';
 import 'package:three/extras/controls/trackball_controls.dart';
 import 'package:three/extras/scene_utils.dart';
+//import 'package:three/src/loaders/stl_loader.dart';
 
 import 'lib/complex/complex.dart';
 import 'lib/complex/disc.dart' ;

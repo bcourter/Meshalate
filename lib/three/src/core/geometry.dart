@@ -431,33 +431,49 @@ class Geometry {
     return diff;
   }
 
-  Geometry clone() {
-    var geometry = new Geometry();
-    var vertices = this.vertices;
-    
-    int il = vertices.length;
-    for ( int i = 0; i < il; i ++ ) {
-      geometry.vertices.add( vertices[ i ].clone() );
-    }
+  clone() {
+    Geometry geometry = this;
 
-    var faces = this.faces;
-    il = faces.length;
-    for ( var i = 0; i < il; i ++ ) {
-      geometry.faces.add( faces[ i ].clone() );
-    }
+        var cloneGeo = new Geometry();
 
-    var uvs = this.faceVertexUvs[0];
-    il = uvs.length;
-    for ( int i = 0; i < il; i ++ ) {
-      var uv = uvs[ i ], uvCopy = [];
-      int jl = uv.length;
-      for ( int j = 0; j < jl; j ++ ) {
-        uvCopy.add( new Vector2( uv[j].x, uv[j].y ) );
-      }
-      geometry.faceVertexUvs[0].add( uvCopy );
-    }
-    
-    return geometry;
+        var i, il;
+
+        var vertices = geometry.vertices,
+          faces = geometry.faces,
+          uvs = geometry.faceVertexUvs[ 0 ];
+
+        // materials
+
+        if ( geometry.materials != null) {
+
+          cloneGeo.materials = new List.from(geometry.materials);
+
+        }
+
+        // vertices
+        cloneGeo.vertices = vertices.map((vertex) => vertex.clone()).toList();
+
+        // faces
+        cloneGeo.faces = faces.map((face) => face.clone()).toList();
+
+        // uvs
+        il = uvs.length;
+        for ( i = 0; i < il; i ++ ) {
+
+          var uv = uvs[ i ], uvCopy = [];
+
+          var jl = uv.length;
+          for ( var j = 0; j < jl; j ++ ) {
+
+            uvCopy.add( new UV( uv[ j ].u, uv[ j ].v ) );
+
+          }
+
+          cloneGeo.faceVertexUvs[ 0 ].add( uvCopy );
+
+        }
+
+        return cloneGeo;
   }
 
   // Quick hack to allow setting new properties (used by the renderer)
